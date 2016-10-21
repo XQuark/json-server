@@ -6,6 +6,7 @@ var cors = require('cors')
 var compression = require('compression')
 var errorhandler = require('errorhandler')
 var objectAssign = require('object-assign')
+var common = require('./common')
 
 module.exports = function (opts) {
   var userDir = path.join(process.cwd(), 'public')
@@ -44,7 +45,7 @@ module.exports = function (opts) {
   }
 
   // Serve static files
-  arr.push(express.static(opts.static))
+  // arr.push(express.static(opts.static)) /**********取消默认静态文件路由*********************/
 
   // No cache for IE
   // https://support.microsoft.com/en-us/kb/234067
@@ -66,5 +67,5 @@ module.exports = function (opts) {
     })
   }
 
-  return arr
+  return arr.concat(common)
 }

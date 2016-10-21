@@ -30,10 +30,11 @@ module.exports = function (db, name) {
   }
 
   router.route('/')
-    .get(show)
-    .post(create)
-    .put(update)
-    .patch(update)
+    // .get(show)
+    // .post(create)
+    // .put(update)
+    // .patch(update)
+    .post(show)
 
   return router
 }

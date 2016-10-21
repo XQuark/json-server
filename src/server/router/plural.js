@@ -225,6 +225,7 @@ module.exports = function (db, name) {
       expand(resource, _expand)
 
       res.locals.data = resource
+      console.log(res.locals.data)
     }
 
     next()
@@ -232,17 +233,22 @@ module.exports = function (db, name) {
 
   // POST /name
   function create (req, res, next) {
-    for (var key in req.body) {
-      req.body[key] = utils.toNative(req.body[key])
+    if(name.match('update') ) {/********modefied*****/
+      nbUpdate(req, res, next)/***************/
+    }else {
+      for (var key in req.body) {
+        req.body[key] = utils.toNative(req.body[key])
+      }
+
+      var resource = db.get(name)
+        .insert(req.body)
+        .value()
+
+      res.status(201)
+      res.locals.data = resource
+
+      next()
     }
-
-    var resource = db.get(name)
-      .insert(req.body)
-      .value()
-
-    res.status(201)
-    res.locals.data = resource
-    next()
   }
 
   // PUT /name/:id
@@ -268,6 +274,79 @@ module.exports = function (db, name) {
     next()
   }
 
+/************modefied**********/
+  function nbUpdate (req, res, next) {
+    for (var key in req.body) {
+      req.body[key] = utils.toNative(req.body[key])
+    }
+    var id = req.body.id
+    var chain = db.get(name)
+    // console.log(chain)
+    chain = chain.updateById(id, req.body)
+    var resource = chain.value()
+    if (resource) {
+      res.locals.data = resource
+      console.log('update success')
+      // console.log(req.body)
+    }
+
+    next()
+
+  }
+
+  function nbList (req, res, next) {
+    var chain = db.get(name)
+    .cloneDeep()
+    var selected = []
+    console.log(req.body)
+    if(req.body['size'] ) {
+      var size =parseInt( req.body['size'] )
+      delete req.body['size']
+    }
+    if( req.body['page'] ) {
+      var page = parseInt(req.body['page'] )
+      delete req.body['page']
+    }
+    for(var i of chain.value() ) {
+      var tmp = true;
+      for (var key in req.body ) {
+        if( typeof i['$' + key] ==='undefined') {
+          if(i[key] && i[key].toString() != req.body[key].toString() ) {
+            tmp = false;
+            break;
+          }
+        } 
+      }
+      if(tmp) {
+        selected.push(i)
+      }
+    }
+    console.log('list')
+    console.log(new Date() )
+    if (page >= 0 && size >= 0 ) {
+      selected = selected.slice( page*size, (page+1)*size )
+    }
+    res.locals.data = selected
+    next()
+  }
+
+   function nbShow (req, res, next) {
+    var value = db.get(name)
+    .cloneDeep()
+    var id = utils.toNative(req.params.id) 
+    for(var i of value ) {
+      if( id.toString() === i['id'].toString() ) {
+        res.locals.data = i
+        break
+      }
+    }
+    console.log(':id')
+    console.log(new Date() )
+    next()
+  }
+
+/********************************/
+
   // DELETE /name/:id
   function destroy (req, res, next) {
     var resource = db.get(name).removeById(utils.toNative(req.params.id)).value()
@@ -286,15 +365,21 @@ module.exports = function (db, name) {
     next()
   }
 
+  // router.route('/')
+  //   .get(list)
+  //   .post(create)
+
+  // router.route('/:id')
+  //   .get(show)
+  //   .put(update)
+  //   .patch(update)
+  //   .delete(destroy)
+
+  /**********modified**************/
   router.route('/')
-    .get(list)
-    .post(create)
-
+    .post(nbList) 
   router.route('/:id')
-    .get(show)
-    .put(update)
-    .patch(update)
-    .delete(destroy)
-
+    .post(nbShow)
+/***************************/ 
   return router
 }

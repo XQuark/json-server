@@ -1,6 +1,4 @@
 var express = require('express')
-var methodOverride = require('method-override')
-var bodyParser = require('body-parser')
 var _ = require('lodash')
 var _db = require('underscore-db')
 var low = require('lowdb')
@@ -9,15 +7,14 @@ var plural = require('./plural')
 var nested = require('./nested')
 var singular = require('./singular')
 var mixins = require('../mixins')
+var common = require('../common')
 
 module.exports = function (source) {
   // Create router
   var router = express.Router()
 
   // Add middlewares
-  router.use(bodyParser.json({limit: '10mb', extended: false}))
-  router.use(bodyParser.urlencoded({extended: false}))
-  router.use(methodOverride())
+  router.use(common)
 
   // Create database
   var db
@@ -51,15 +48,18 @@ module.exports = function (source) {
 
   router.use(nested())
 
+  router.UDpaths = [];/* *****modified*********/
   // Create routes
   db.forEach(function (value, key) {
     if (_.isPlainObject(value)) {
       router.use('/' + key, singular(db, key))
+      router.UDpaths.push('/' + key)/* *****modified*********/
       return
     }
 
     if (_.isArray(value)) {
       router.use('/' + key, plural(db, key))
+      router.UDpaths.push('/' + key)/* *****modified*********/
       return
     }
 
@@ -71,6 +71,7 @@ module.exports = function (source) {
     throw new Error(msg)
   }).value()
 
+/* ****************modified******************
   router.use(function (req, res) {
     if (!res.locals.data) {
       res.status(404)
@@ -79,6 +80,7 @@ module.exports = function (source) {
 
     router.render(req, res)
   })
+******************************************/
 
   router.use(function (err, req, res, next) {
     console.error(err.stack)
